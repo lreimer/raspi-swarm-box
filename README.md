@@ -13,8 +13,13 @@ Well, first you need to buy the hardware. Here is the list of what I bought.
 ## Assembly
 
 This is the fun part. Basically unpack everything and put all the parts together.
+Have a look into the `assembly/` directory for more images.
 
 ![](assembly/IMG_20190207_134102.jpg)
+
+## Node Setup
+
+## OpenFaaS Installation
 
 ## Maintainer
 
