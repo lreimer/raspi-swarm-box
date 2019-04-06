@@ -48,11 +48,20 @@ ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.4
 
 To make working with the nodes a little easier, edit your `/etc/hosts` file and add the following:
 ```
-172.19.181.254  master
+172.19.181.254  master cnat
 172.19.181.1    p1
 172.19.181.2    p2
 172.19.181.3    p3
 172.19.181.4    p4
+```
+
+If you want to develop and compile your Go based services on the controller node, you need to install Go.
+```
+cd /tmp/
+wget https://dl.google.com/go/go1.12.1.linux-armv6l.tar.gz
+
+sudo mkdir -p /usr/local/go
+sudo tar -xvf /tmp/go1.12.1.linux-armv6l.tar.gz -C /usr/local/go --strip-components=1
 ```
 
 ### Zero Node Setup
@@ -69,6 +78,7 @@ sudo raspi-config
 In the configuration, 
 - make sure you extend the partition to the full size of your SD card! 
 - enable SSH
+- change the root password
 - reduce the memory split to 16MB
 - adjust the locale and timezone settings
 - update the system
@@ -76,11 +86,30 @@ In the configuration,
 When all changes are done, perform a reboot of the node. You should be able to login via SSH now.
 
 
-## Docker (Swarm) Setup
+## Docker (Swarm)  Docker
+
+### Install Docker
 
 The Docker setup is slightly complicated. The problem is, that the current versions of Docker do not run on the Rasperry Pi Zeros anymore! Make
-sure you follow the Github issue #3333 to get the latest status.
+sure you follow the Github issue https://github.com/moby/moby/issues/38175 to get the latest status. As of this writing, you need to use 18.06.*
 
+1. On each node, ensure that there is a file `/etc/apt/sources.list.d/docker.list` with the following content, create it otherwise.
+```
+deb [arch=armhf] https://download.docker.com/linux/raspbian stretch stable
+```
+
+2. On each node, ensure that there is a file `/etc/apt/preferences.d/docker-ce` with the following content, create it otherwise.
+```
+Package: docker-ce
+Pin: version 18.06.*
+Pin-Priority: 1000
+```
+
+3. On each node, install the Docker package using: 
+```
+sudo apt-get -y install docker-ce=18.06.2~ce~3-0~raspbian
+sudo usermod -aG docker pi
+```
 
 ### Create Docker Swarm
 
@@ -89,7 +118,7 @@ First, you need to initialize the swarm on the master node. Make sure you use th
 docker swarm init --advertise-addr 172.19.181.254:2377 --listen-addr 172.19.181.254:2377
 ```
 
-Then on each of the Zero nodes, login via SSH and issue the command that the previous command echoed _(the token will vary)_, e.g.
+Then on each of the Zero nodes, login via SSH and issue the command that the previous command echoed _(the token will vary!!!)_, e.g.
 ```
 docker swarm join --token SWMTKN-1-6cx6yq79x459o28kwaipsta7y149o2j6p2g0sxjodil249v0o8-daye1lc9blrh2ba2ojxr6k82v 172.19.181.254:2377
 ```
@@ -99,6 +128,30 @@ Once you did this, check the health of your swarm and that all nodes are availab
 docker node list
 docker service create --name=viz --publish=8080:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock alexellis2/visualizer-arm:latest
 xdg-open http://master:8080
+```
+
+### Using Docker Swarm
+
+```
+docker service create --name nginx --publish :80:80 --replicas 1 arm32v6/nginx:1.15.9-alpine
+docker service scale nginx=4
+
+docker service create --name alpine --entrypoint sleep 10 --restart-delay 1s --replicas 4 arm32v6/alpine:3.9.2
+
+# pull some useful images if required
+docker pull arm32v6/traefik:1.7.9
+docker pull arm32v6/consul:1.4.3
+docker pull arm32v6/golang:1.12.1-alpine
+docker pull arm32v6/nats-streaming:0.12.2-linux
+docker pull arm32v6/postgres:11.2-alpine
+docker pull arm32v6/nginx:1.15.9-alpine
+docker pull arm32v6/alpine:3.9.2
+docker pull arm32v6/node:11.11.0-alpine
+docker pull arm32v6/eclipse-mosquitto:1.5.8
+docker pull arm32v6/haproxy:1.9.4-alpine
+docker pull arm32v6/nats:1.4.1-linux
+docker pull arm32v6/rabbitmq:3.7-alpine
+docker pull arm32v6/rabbitmq:3.7-management-alpine
 ```
 
 ### Troubleshooting
@@ -116,11 +169,8 @@ Sometimes the Docker service on the Zero nodes does not start properly and hangs
 via SSH one by one and perform a `sudo systemctl restart docker`. Once done, restart the Docker service on the controller node as well. Your swarm
 should be up and running again.
 
-If your Docker swarm breaks for unknown reasons, and you want to recreat it, issue the following commands on each node and master:
-```
-docker swarm leave --force
-```
-Once you have done this, create the swarm again using the above instructions. 
+If your Docker swarm breaks for unknown reasons, and you want to recreate it, issue `docker swarm leave --force` on each node and master. Once you 
+have done this, create the swarm again using the above instructions. 
 
 ## OpenFaaS Installation
 
