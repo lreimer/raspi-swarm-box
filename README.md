@@ -37,6 +37,8 @@ Once switched on, perform the following steps after the first boot
 Before you continue with the following steps, make sure you have performed the basic setup of all four Zero nodes.
 In a terminal, issue the following commands:
 ```
+clusterhat on
+
 ssh-keygen 
 ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.1
 ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.2
@@ -71,18 +73,54 @@ In the configuration,
 - adjust the locale and timezone settings
 - update the system
 
-When all changes are done, perform a reboot of the node. 
+When all changes are done, perform a reboot of the node. You should be able to login via SSH now.
 
 
-## Docker Swarm Setup
+## Docker (Swarm) Setup
 
+The Docker setup is slightly complicated. The problem is, that the current versions of Docker do not run on the Rasperry Pi Zeros anymore! Make
+sure you follow the Github issue #3333 to get the latest status.
+
+
+### Create Docker Swarm
+
+First, you need to initialize the swarm on the master node. Make sure you use the ClusterHAT internal address.
+```
+docker swarm init --advertise-addr 172.19.181.254:2377 --listen-addr 172.19.181.254:2377
+```
+
+Then on each of the Zero nodes, login via SSH and issue the command that the previous command echoed _(the token will vary)_, e.g.
+```
+docker swarm join --token SWMTKN-1-6cx6yq79x459o28kwaipsta7y149o2j6p2g0sxjodil249v0o8-daye1lc9blrh2ba2ojxr6k82v 172.19.181.254:2377
+```
+
+Once you did this, check the health of your swarm and that all nodes are available. Also you can install a visualizer image. 
+```
+docker node list
+docker service create --name=viz --publish=8080:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock alexellis2/visualizer-arm:latest
+xdg-open http://master:8080
+```
 
 ### Troubleshooting
+
+If you have followed the official Docker setup instructions (`curl -sLSf https://get.docker.com | sudo sh`) and you are facing the problem that 
+the _containerd_ service does not start on your Zero nodes, you need to remove and purge Docker from the system and follow the instructions above.
+```
+sudo apt-get purge docker-ce
+sudo apt autoremove
+sudo rm -rf /var/lib/docker
+sudo reboot
+``` 
 
 Sometimes the Docker service on the Zero nodes does not start properly and hangs. To solve this, start each node individually. Login to each node
 via SSH one by one and perform a `sudo systemctl restart docker`. Once done, restart the Docker service on the controller node as well. Your swarm
 should be up and running again.
 
+If your Docker swarm breaks for unknown reasons, and you want to recreat it, issue the following commands on each node and master:
+```
+docker swarm leave --force
+```
+Once you have done this, create the swarm again using the above instructions. 
 
 ## OpenFaaS Installation
 
