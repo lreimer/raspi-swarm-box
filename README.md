@@ -19,6 +19,71 @@ Have a look into the `assembly/` directory for more images.
 
 ## Node Setup
 
+This section is about setting up all five Raspberry Pi nodes with the required software. First up, make sure that you download
+the Raspbian images from the ClusterHAT website: https://clusterhat.com/setup-software
+
+Since we want the Zero nodes to be able to access the internet, make sure you download the NAT Desktop controller image! Write all
+the images to a SD card using balenaEtcher or a similar software. Also make sure to insert the appropriate SD card into the right
+Raspi Zero slot.
+
+### Controller Node Setup
+
+Once switched on, perform the following steps after the first boot
+- following the basic setup instructions (locale, network and wireless LAN, password, update)
+- after the next reboot, open the Raspi configuration in a shell using `sudo rasp-config`
+- make sure you extend the partition to the full size of your SD card! 
+- enable SSH
+
+Before you continue with the following steps, make sure you have performed the basic setup of all four Zero nodes.
+In a terminal, issue the following commands:
+```
+ssh-keygen 
+ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.1
+ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.2
+ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.3
+ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.4
+```
+
+To make working with the nodes a little easier, edit your `/etc/hosts` file and add the following:
+```
+172.19.181.254  master
+172.19.181.1    p1
+172.19.181.2    p2
+172.19.181.3    p3
+172.19.181.4    p4
+```
+
+### Zero Node Setup
+
+On the controller node, open a terminal and perform the following commands for each Zero (p1, p2, p3, p4).
+The user is `pi` and the initial password is `clusterhat`. 
+
+```
+clusterhat on p1
+minicom p1
+sudo raspi-config
+```
+
+In the configuration, 
+- make sure you extend the partition to the full size of your SD card! 
+- enable SSH
+- reduce the memory split to 16MB
+- adjust the locale and timezone settings
+- update the system
+
+When all changes are done, perform a reboot of the node. 
+
+
+## Docker Swarm Setup
+
+
+### Troubleshooting
+
+Sometimes the Docker service on the Zero nodes does not start properly and hangs. To solve this, start each node individually. Login to each node
+via SSH one by one and perform a `sudo systemctl restart docker`. Once done, restart the Docker service on the controller node as well. Your swarm
+should be up and running again.
+
+
 ## OpenFaaS Installation
 
 ## Maintainer
