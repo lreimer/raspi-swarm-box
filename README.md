@@ -57,6 +57,8 @@ To make working with the nodes a little easier, edit your `/etc/hosts` file and 
 
 If you want to develop and compile your Go based services on the controller node, you need to install Go.
 ```
+sudo apt-get install -y vim
+
 cd /tmp/
 wget https://dl.google.com/go/go1.12.1.linux-armv6l.tar.gz
 
@@ -86,7 +88,7 @@ In the configuration,
 When all changes are done, perform a reboot of the node. You should be able to login via SSH now.
 
 
-## Docker (Swarm)  Docker
+## Docker (Swarm) Setup
 
 ### Install Docker
 
@@ -173,6 +175,14 @@ If your Docker swarm breaks for unknown reasons, and you want to recreate it, is
 have done this, create the swarm again using the above instructions. 
 
 ## OpenFaaS Installation
+
+echo "admin" | docker secret create basic-auth-user -
+echo "admin" | docker secret create basic-auth-password -
+export BASIC_AUTH="false"
+
+docker stack deploy openfaas --compose-file docker-compose.arm64.yml
+
+
 
 ## Maintainer
 
