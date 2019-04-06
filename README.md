@@ -192,7 +192,7 @@ have done this, create the swarm again using the above instructions.
 Currently, we have to install OpenFaaS on the master node, because all images need _armhf_ architecture.
 
 ```
-make openfaas-sources openfaas_install
+make openfaas-sources openfaas-install
 
 echo "admin" | docker secret create basic-auth-user -
 echo "admin" | docker secret create basic-auth-password -
