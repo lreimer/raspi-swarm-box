@@ -128,8 +128,21 @@ docker swarm join --token SWMTKN-1-6cx6yq79x459o28kwaipsta7y149o2j6p2g0sxjodil24
 Once you did this, check the health of your swarm and that all nodes are available. Also you can install a visualizer image. 
 ```
 docker node list
-docker service create --name=viz --publish=8080:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock alexellis2/visualizer-arm:latest
-xdg-open http://master:8080
+
+docker node update --label-add type=zero p1
+docker node update --label-add arch=armv6l p1
+
+docker node update --label-add type=zero p2
+docker node update --label-add arch=armv6l p2
+
+docker node update --label-add type=zero p3
+docker node update --label-add arch=armv6l p3
+
+docker node update --label-add type=zero p4
+docker node update --label-add arch=armv6l p4
+
+docker service create --name=viz --publish=7070:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock alexellis2/visualizer-arm:latest
+xdg-open http://master:7070
 ```
 
 ### Using Docker Swarm
@@ -176,11 +189,14 @@ have done this, create the swarm again using the above instructions.
 
 ## OpenFaaS Installation
 
+
+cd openfaas/
+
 echo "admin" | docker secret create basic-auth-user -
 echo "admin" | docker secret create basic-auth-password -
-export BASIC_AUTH="false"
+export BASIC_AUTH="true"
 
-docker stack deploy openfaas --compose-file docker-compose.arm64.yml
+docker stack deploy openfaas --compose-file docker-compose.armhf.yml
 
 
 
