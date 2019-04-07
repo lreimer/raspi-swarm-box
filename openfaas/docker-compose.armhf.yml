@@ -34,7 +34,8 @@ services:
                 window: 380s
             placement:
                 constraints:
-                    - 'node.labels.type != zero'
+                    # - 'node.labels.type != zero'
+                    - 'node.platform.arch != armv6l'
                     - 'node.platform.os == linux'
         secrets:
             - basic-auth-user
@@ -90,7 +91,8 @@ services:
                     memory: 50M
             placement:
                 constraints:
-                    - 'node.labels.type != zero' 
+                    # - 'node.labels.type != zero'
+                    - 'node.platform.arch != armv6l'
                     - 'node.platform.os == linux'
 
     queue-worker:
@@ -115,7 +117,8 @@ services:
                 window: 380s
             placement:
                 constraints:
-                    - 'node.labels.type != zero'
+                    # - 'node.labels.type != zero'
+                    - 'node.platform.arch != armv6l'
                     - 'node.platform.os == linux'
         secrets:
             - basic-auth-user
@@ -136,7 +139,7 @@ services:
             target: /etc/prometheus/alert.rules.yml
         command:
           - '--config.file=/etc/prometheus/prometheus.yml'
-        #   - '-storage.local.path=/prometheus'
+         #  - '-storage.local.path=/prometheus'
         ports:
             - 9090:9090
         networks:

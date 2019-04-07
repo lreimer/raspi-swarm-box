@@ -31,7 +31,7 @@ Raspi Zero slot.
 Once switched on, perform the following steps after the first boot
 - following the basic setup instructions (locale, network and wireless LAN, password, update)
 - after the next reboot, open the Raspi configuration in a shell using `sudo rasp-config`
-- make sure you extend the partition to the full size of your SD card! 
+- make sure you extend the partition to the full size of your SD card!
 - enable SSH
 
 Before you continue with the following steps, make sure you have performed the basic setup of all four Zero nodes.
@@ -39,7 +39,7 @@ In a terminal, issue the following commands:
 ```
 clusterhat on
 
-ssh-keygen 
+ssh-keygen
 ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.1
 ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.2
 ssh-copy-id -i ~/.ssh/id_rsa pi@172.19.181.3
@@ -69,7 +69,7 @@ sudo tar -xvf /tmp/go1.12.1.linux-armv6l.tar.gz -C /usr/local/go --strip-compone
 ### Zero Node Setup
 
 On the controller node, open a terminal and perform the following commands for each Zero (p1, p2, p3, p4).
-The user is `pi` and the initial password is `clusterhat`. 
+The user is `pi` and the initial password is `clusterhat`.
 
 ```
 clusterhat on p1
@@ -77,8 +77,8 @@ minicom p1
 sudo raspi-config
 ```
 
-In the configuration, 
-- make sure you extend the partition to the full size of your SD card! 
+In the configuration,
+- make sure you extend the partition to the full size of your SD card!
 - enable SSH
 - change the root password
 - reduce the memory split to 16MB
@@ -107,7 +107,7 @@ Pin: version 18.06.*
 Pin-Priority: 1000
 ```
 
-3. On each node, install the Docker package using: 
+3. On each node, install the Docker package using:
 ```
 sudo apt-get -y install docker-ce=18.06.2~ce~3-0~raspbian
 sudo usermod -aG docker pi
@@ -125,21 +125,16 @@ Then on each of the Zero nodes, login via SSH and issue the command that the pre
 docker swarm join --token SWMTKN-1-6cx6yq79x459o28kwaipsta7y149o2j6p2g0sxjodil249v0o8-daye1lc9blrh2ba2ojxr6k82v 172.19.181.254:2377
 ```
 
-Once you did this, check the health of your swarm and that all nodes are available. Also you can install a visualizer image. 
+Once you did this, check the health of your swarm and that all nodes are available.
+We also label the Zero nodes so that we can later specify placement conditions for our services.
+Also you can install a visualizer image.
 ```
 docker node list
 
 docker node update --label-add type=zero p1
-docker node update --label-add arch=armv6l p1
-
 docker node update --label-add type=zero p2
-docker node update --label-add arch=armv6l p2
-
 docker node update --label-add type=zero p3
-docker node update --label-add arch=armv6l p3
-
 docker node update --label-add type=zero p4
-docker node update --label-add arch=armv6l p4
 
 docker service create --name=viz --publish=7070:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock alexellis2/visualizer-arm:latest
 xdg-open http://master:7070
@@ -171,34 +166,40 @@ docker pull arm32v6/rabbitmq:3.7-management-alpine
 
 ### Troubleshooting
 
-If you have followed the official Docker setup instructions (`curl -sLSf https://get.docker.com | sudo sh`) and you are facing the problem that 
+If you have followed the official Docker setup instructions (`curl -sLSf https://get.docker.com | sudo sh`) and you are facing the problem that
 the _containerd_ service does not start on your Zero nodes, you need to remove and purge Docker from the system and follow the instructions above.
 ```
 sudo apt-get purge docker-ce
 sudo apt autoremove
 sudo rm -rf /var/lib/docker
 sudo reboot
-``` 
+```
 
 Sometimes the Docker service on the Zero nodes does not start properly and hangs. To solve this, start each node individually. Login to each node
 via SSH one by one and perform a `sudo systemctl restart docker`. Once done, restart the Docker service on the controller node as well. Your swarm
 should be up and running again.
 
-If your Docker swarm breaks for unknown reasons, and you want to recreate it, issue `docker swarm leave --force` on each node and master. Once you 
-have done this, create the swarm again using the above instructions. 
+If your Docker swarm breaks for unknown reasons, and you want to recreate it, issue `docker swarm leave --force` on each node and master. Once you
+have done this, create the swarm again using the above instructions.
 
 ## OpenFaaS Installation
 
 Currently, we have to install OpenFaaS on the master node, because all images need _armhf_ architecture.
-
+The `openfaas/docker-compose.armhf.yml` file has been modified so that no service is placed on one of
+the four Zero nodes which have an `armv6l` architecture.
 ```
 make openfaas-sources openfaas-install
 
 echo "admin" | docker secret create basic-auth-user -
 echo "admin" | docker secret create basic-auth-password -
 
-export BASIC_AUTH="true" && docker stack deploy openfaas --compose-file openfaas/docker-compose.armhf.yml
+export BASIC_AUTH="true"
+docker stack deploy openfaas --compose-file openfaas/docker-compose.armhf.yml
 ```
+
+### Running OpenFaas functions
+
+
 
 
 ## Maintainer
